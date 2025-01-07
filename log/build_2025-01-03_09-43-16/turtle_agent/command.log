@@ -1,0 +1,4 @@
+Invoking command in '/home/ras/isaac_ws/rosa2_mod/build/turtle_agent': /usr/bin/cmake --build /home/ras/isaac_ws/rosa2_mod/build/turtle_agent -- -j16 -l16
+Invoked command in '/home/ras/isaac_ws/rosa2_mod/build/turtle_agent' returned '0': /usr/bin/cmake --build /home/ras/isaac_ws/rosa2_mod/build/turtle_agent -- -j16 -l16
+Invoking command in '/home/ras/isaac_ws/rosa2_mod/build/turtle_agent': /usr/bin/cmake --install /home/ras/isaac_ws/rosa2_mod/build/turtle_agent
+Invoked command in '/home/ras/isaac_ws/rosa2_mod/build/turtle_agent' returned '0': /usr/bin/cmake --install /home/ras/isaac_ws/rosa2_mod/build/turtle_agent

@@ -1,0 +1,29 @@
+<package format="3">
+    <name>turtle_agent</name>
+    <version>0.0.1</version>
+    <description>Embodied ROSA agent for the TurtleSim robot.</description>
+
+    <!-- Maintainer tag: At least one required -->
+    <maintainer email="Rob.Royce@jpl.nasa.gov">Rob Royce</maintainer>
+
+    <!-- License tag: At least one required -->
+    <license>Apache 2.0</license>
+
+    <!-- Dependencies -->
+    <buildtool_depend>ament_cmake</buildtool_depend>
+    <build_depend>rclpy</build_depend>
+    <build_depend>std_msgs</build_depend>
+    <build_depend>std_srvs</build_depend>
+    <exec_depend>rclpy</exec_depend>
+    <exec_depend>std_msgs</exec_depend>
+    <exec_depend>std_srvs</exec_depend>
+
+    <!-- Test dependencies (optional) -->
+    <!-- <test_depend>ament_cmake_pytest</test_depend> -->
+
+    <!-- Export section -->
+    <export>
+        <!-- Additional metadata can go here -->
+        <build_type>ament_cmake</build_type>
+    </export>
+</package>
