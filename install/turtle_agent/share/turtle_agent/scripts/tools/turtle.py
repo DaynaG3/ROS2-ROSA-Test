@@ -20,17 +20,16 @@ from rclpy.publisher import Publisher
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from std_srvs.srv import Empty
-from turtlesim.srv import Spawn, Kill, TeleportAbsolute, TeleportRelative, SetPen
 from turtlesim.msg import Pose
-from langchain.agents import tool
+from turtlesim.srv import Spawn, TeleportAbsolute, TeleportRelative, Kill, SetPen
 
 from typing import Annotated #Added
-#from langchain_core.tools import tool #Added
+from typing import Any #Added
+from langchain_core.tools import tool #Added
+from rclpy.duration import Duration #Added
+import time #Added
 
 cmd_vel_pubs = {}
-
-#   # Add default turtle publisher
-#   self.add_cmd_vel_pub("turtle1", self.create_publisher(Twist, '/turtle1/cmd_vel', 10))
 
 def add_cmd_vel_pub(name: str, publisher: Publisher):
     global cmd_vel_pubs
@@ -40,22 +39,22 @@ def remove_cmd_vel_pub(name: str):
     global cmd_vel_pubs
     cmd_vel_pubs.pop(name, None)
 
-def within_bounds(x: float, y: float) -> tuple:
-    """
-    Check if the given x, y coordinates are within the bounds of the turtlesim environment.
+# Add the default turtle1 publisher on startup
+def init_node(node: Node):
+    # rclpy.init()
+    # node = Node('turtle_agent')
+    add_cmd_vel_pub("turtle1", node.create_publisher(Twist, '/turtle1/cmd_vel', 10))
+    return node
 
-    :param x: The x-coordinate.
-    :param y: The y-coordinate.
-    """
+def within_bounds(x: float, y: float) -> tuple:
     if 0 <= x <= 11 and 0 <= y <= 11:
         return True, "Coordinates are within bounds."
     else:
-        return False, f"({x}, {y}) is out of bounds. Range is [0, 11] for both axes."
+        return False, f"({x}, {y}) will be out of bounds. Range is [0, 11] for each."
 
 def will_be_within_bounds(
     node: Node, name: str, velocity: float, lateral: float, angle: float, duration: float = 1.0
 ) -> tuple:
-    """Check if the turtle will be within bounds after publishing a twist command."""
     pose = get_turtle_pose(node, [name])
     current_x = pose[name].x
     current_y = pose[name].y
@@ -70,7 +69,7 @@ def will_be_within_bounds(
             current_y
             + (velocity * sin(current_theta) + lateral * cos(current_theta)) * duration
         )
-    else: # Circular motion
+    else:
         radius = sqrt(velocity**2 + lateral**2) / abs(angle)
         center_x = current_x - radius * sin(current_theta)
         center_y = current_y + radius * cos(current_theta)
@@ -78,7 +77,6 @@ def will_be_within_bounds(
         new_x = center_x + radius * sin(current_theta + angle_traveled)
         new_y = center_y - radius * cos(current_theta + angle_traveled)
 
-        # Check if any point on the circle is out of bounds
         for t in range(int(duration) + 1):
             angle_t = current_theta + angle * t
             x_t = center_x + radius * sin(angle_t)
@@ -89,7 +87,7 @@ def will_be_within_bounds(
                     False,
                     f"The circular path will go out of bounds at ({x_t:.2f}, {y_t:.2f}).",
                 )
-    # Check if the final x, y coordinates are within bounds
+
     in_bounds, message = within_bounds(new_x, new_y)
     if not in_bounds:
         return (
@@ -99,34 +97,22 @@ def will_be_within_bounds(
 
     return True, f"The turtle will remain within bounds at ({new_x:.2f}, {new_y:.2f})."
 
-# Tool: Spawn a turtle
-@tool
 def spawn_turtle(node: Node, name: str, x: float, y: float, theta: float) -> str:
-
-    """
-    Spawn a turtle at the given x, y, and theta coordinates.
-
-    :param name: name of the turtle.
-    :param x: x-coordinate.
-    :param y: y-coordinate.
-    :param theta: angle.
-    """
-
     in_bounds, message = within_bounds(x, y)
     if not in_bounds:
         return message
-    
+
     name = name.replace("/", "")
 
     try:
         spawn = node.create_client(Spawn, '/spawn')
         spawn.wait_for_service(timeout_sec=5)
-        request = Spawn.Request()
-        request.x = x
-        request.y = y
-        request.theta = theta
-        request.name = name
-        spawn.call_async(request)
+        spawn_req = Spawn.Request()
+        spawn_req.x = x
+        spawn_req.y = y
+        spawn_req.theta = theta
+        spawn_req.name = name
+        spawn.call_async(spawn_req)
 
         global cmd_vel_pubs
         cmd_vel_pubs[name] = node.create_publisher(Twist, f'/{name}/cmd_vel', 10)
@@ -135,15 +121,7 @@ def spawn_turtle(node: Node, name: str, x: float, y: float, theta: float) -> str
     except Exception as e:
         return f"Failed to spawn {name}: {e}"
 
-# Tool: Kill a turtle
-@tool
-def kill_turtle(node: Node, names: List[str]) -> str:
-
-    """
-    Removes a turtle from the turtlesim environment.
-
-    :param names: List of names of the turtles to remove (do not include the forward slash).
-    """
+def kill_turtle(node: Node, names: List[str]):
     names = [name.replace("/", "") for name in names]
     response = ""
     global cmd_vel_pubs
@@ -157,31 +135,12 @@ def kill_turtle(node: Node, names: List[str]) -> str:
             cmd_vel_pubs.pop(name, None)
 
             response += f"Successfully killed {name}.\n"
-        except Exception as e:
+        except rclpy.exceptions.ROSInterruptException as e:
             response += f"Failed to kill {name}: {e}\n"
 
     return response
-    #     kill_client = node.create_client(Kill, f'/{name}/kill')
-    #     if not kill_client.wait_for_service(timeout_sec=5.0):
-    #         response += f"Service /{name}/kill unavailable.\n"
-    #         continue
 
-    #     request = Kill.Request()
-    #     request.name = name
-
-    #     future = kill_client.call_async(request)
-    #     rclpy.spin_until_future_complete(self, future)
-    #     if future.result() is not None:
-    #         node.remove_cmd_vel_pub(name)
-    #         response += f"Successfully killed {name}.\n"
-    #     else:
-    #         response += f"Failed to kill {name}.\n"
-
-    # return response
-
-@tool
 def clear_turtlesim(node: Node):
-    """Clears the turtlesim background and sets the color to the value of the background parameters."""
     try:
         clear = node.create_client(Empty, '/clear')
         clear.wait_for_service(timeout_sec=5)
@@ -190,19 +149,22 @@ def clear_turtlesim(node: Node):
     except Exception as e:
         return f"Failed to clear the turtlesim background: {e}"
 
-@tool   
+def get_turtle_pose(node: Node, names: List[str]) -> dict:
+    names = [name.replace("/", "") for name in names]
+    poses = {}
+
+    for name in names:
+        try:
+            msg = node.create_subscription(Pose, f'/{name}/pose', lambda msg: msg, 10)
+            poses[name] = msg
+        except rclpy.exceptions.ROSInterruptException:
+            return {"Error": f"Failed to get pose for {name}: /{name}/pose not available."}
+
+    return poses
+
 def teleport_absolute(
     node: Node, name: str, x: float, y: float, theta: float, hide_pen: bool = True
 ):
-    """
-    Teleport a turtle to the given x, y, and theta coordinates.
-
-    :param name: name of the turtle
-    :param x: The x-coordinate, range: [0, 11]
-    :param y: The y-coordinate, range: [0, 11]
-    :param theta: angle
-    :param hide_pen: True to hide the pen (do not show movement trace on screen), False to show the pen
-    """
     in_bounds, message = within_bounds(x, y)
     if not in_bounds:
         return message
@@ -221,8 +183,7 @@ def teleport_absolute(
     except Exception as e:
         return f"Failed to teleport the turtle: {e}"
 
-@tool   
-def teleport_relative(node: Node, name: str, linear: float, angular: float):
+def teleport_relative(self, name: str, linear: float, angular: float):
         """
         Teleport a turtle relative to its current position.
 
@@ -230,11 +191,11 @@ def teleport_relative(node: Node, name: str, linear: float, angular: float):
         :param linear: linear distance
         :param angular: angular distance
         """
-        client = node.create_client(TeleportRelative, f'/{name}/teleport_relative')
+        client = self.create_client(TeleportRelative, f'/{name}/teleport_relative')
         
         # Wait for the service to be available
         if not client.wait_for_service(timeout_sec=5.0):
-            node.get_logger().error(f"Service /{name}/teleport_relative not available.")
+            self.get_logger().error(f"Service /{name}/teleport_relative not available.")
             return f"Failed to teleport the {name}: service not available."
         
         # Create the request
@@ -242,97 +203,82 @@ def teleport_relative(node: Node, name: str, linear: float, angular: float):
         request.linear = linear
         request.angular = angular
 
-
-# Tool: Get pose of turtles
-@tool
-def get_turtle_pose(node: Node, names: List[str]) -> dict:
-    """
-    Get the pose of one or more turtles.
-
-    :param names: List of names of the turtles to get the pose of.
-    """
-    names = [name.replace("/", "") for name in names]
-    poses = {}
-    for name in names:
-        try:
-            pose_msg = node.create_subscription(Pose, f'/{name}/pose', lambda msg: poses.update({name: msg}), 10)
-            rclpy.spin_once(node)
-            poses[name] = pose_msg
-        except Exception as e:
-            poses[name] = f"Error retrieving pose: {e}"
-    return poses
-
-# # Tool: Publish twist commands
-# @tool
-# def publish_twist_to_cmd_vel(node: Node, name: str, linear: float, angular: float, steps: int = 1):
-#     """
-#     Publish a Twist message to the /{name}/cmd_vel topic to move a turtle robot.
-#     Use a combination of linear and angular velocities to move the turtle in the desired direction.
-
-#     :param name: name of the turtle (do not include the forward slash)
-#     :param velocity: linear velocity, where positive is forward and negative is backward
-#     :param lateral: lateral velocity, where positive is left and negative is right
-#     :param angle: angular velocity, where positive is counterclockwise and negative is clockwise
-#     :param steps: Number of times to publish the twist message
-#     """
-#     name = name.replace("/", "")
-#     if name not in node.cmd_vel_pubs:
-#         return f"No publisher available for {name}."
-
-#     publisher = node.cmd_vel_pubs[name]
-#     twist = Twist()
-#     twist.linear.x = linear
-#     twist.angular.z = angular
-
-#     for _ in range(steps):
-#         publisher.publish(twist)
-#         node.get_logger().info(f"Published {twist} to {name}/cmd_vel")
-#         node.get_clock
-
+#edited 10 Jan
 @tool
 def publish_twist_to_cmd_vel(
-    node: Annotated[Node, "A ROS 2 Node instance used for publishing"],
-    topic: Annotated[str, "The topic to publish the velocity commands (e.g., /cmd_vel)"],
+    name: Annotated[str, "The topic to publish the velocity commands (e.g., /cmd_vel)"],
     linear_x: Annotated[float, "Linear velocity in the x-axis"],
     linear_y: Annotated[float, "Linear velocity in the y-axis (optional)"] = 0.0,
     angular_z: Annotated[float, "Angular velocity around the z-axis"] = 0.0,
-) -> str:
+    steps: int = 1 ) -> str:
     """
-    Publishes velocity commands to a specified cmd_vel topic.
+    Publish a Twist message to the /{name}/cmd_vel topic to move a turtle robot.
+    Use a combination of linear and angular velocities to move the turtle in the desired direction.
 
-    :param node: A ROS 2 Node instance.
-    :param topic: The topic to which the velocity command is published.
-    :param linear_x: Linear velocity in the x direction.
-    :param linear_y: Linear velocity in the y direction (optional).
-    :param angular_z: Angular velocity around the z-axis.
+    :param name: name of the turtle (do not include the forward slash)
+    :param linear_x: Linear velocity in the x direction, where positive is forward and negative is backward
+    :param linear_y: Linear velocity in the y direction (optional), where positive is left and negative is right
+    :param angular_z: Angular velocity around the z-axis, where positive is counterclockwise and negative is clockwise
+    :param steps: Number of times to publish the twist message
     :return: Status message about the publishing action.
     """
+
+    cmd = Twist()
+    cmd.linear.x = linear_x
+    cmd.linear.y = linear_y
+    cmd.angular.z = angular_z 
+    
+    # Remove any forward slashes from the name
+    name = name.replace("/", "")
+
+    # Check if the movement will keep the turtle within bounds
+    # in_bounds, message = will_be_within_bounds(
+    # node, name, linear_x, linear_y, angular_z, duration=steps)
+
     try:
-        # Create publisher
-        cmd_vel_pub = node.create_publisher(Twist, topic, 10)
+
+        # if name not in cmd_vel_pubs:
+        #         return f"Publisher for {name} not found. Call create_cmd_vel_publisher() first."
         
-        # Create and populate Twist message
-        cmd = Twist()
-        cmd.linear.x = linear_x
-        cmd.linear.y = linear_y
-        cmd.angular.z = angular_z
+        # # Create publisher
+        # cmd_vel_pub = node.create_publisher(Twist, topic, 10)
+    
+        # if not in_bounds:
+        #     return message     
 
         # Publish message
-        cmd_vel_pub.publish(cmd)
-
-        return f"Published velocity command to {topic}: linear_x={linear_x}, linear_y={linear_y}, angular_z={angular_z}"
+        global cmd_vel_pubs
+        pub = cmd_vel_pubs[name]
+        # cmd_vel_pubs[name].publish(cmd)
+        for _ in range(steps):
+            pub.publish(cmd)
+            time.sleep(1.0)        
+        return f"Published velocity command to {name}: linear_x={linear_x}, linear_y={linear_y}, angular_z={angular_z}"
     except Exception as e:
         return f"Failed to publish velocity command: {e}"
 
+#added
+# def publish_twist_to_cmd_vel(self, name: str, velocity: float, lateral: float, angle: float, steps: int = 1) -> str:
+#         """Publish a Twist message to move the turtle."""
+#         vel = Twist()
+#         vel.linear.x = velocity
+#         vel.linear.y = lateral
+#         vel.angular.z = angle
 
-#Tool: Stop turtle
-@tool
+#         try:
+#             pub = self.cmd_vel_pubs.get(name)
+#             if not pub:
+#                 return f"No publisher found for {name}"
+
+#             for _ in range(steps):
+#                 pub.publish(vel)
+#                 self.get_clock().sleep_for(rclpy.duration.Duration(seconds=1))
+
+#             return f"Published Twist to {name}"
+#         except Exception as e:
+#             return f"Failed to publish Twist to /{name}/cmd_vel: {e}"
+
 def stop_turtle(node: Node, name: str):
-    """
-    Stop a turtle by publishing a Twist message with zero linear and angular velocities.
-
-    :param name: name of the turtle
-    """
     return publish_twist_to_cmd_vel(
         node,
         name,
@@ -341,12 +287,7 @@ def stop_turtle(node: Node, name: str):
         0.0,
     )
 
-#Tool: Reset turtlesim
-@tool
 def reset_turtlesim(node: Node):
-    """
-    Resets the turtlesim, removes all turtles, clears any markings, and creates a new default turtle at the center.
-    """
     try:
         reset = node.create_client(Empty, '/reset')
         reset.wait_for_service(timeout_sec=5)
@@ -357,20 +298,7 @@ def reset_turtlesim(node: Node):
     except Exception as e:
         return f"Failed to reset the turtlesim environment: {e}"
 
-#Tool: set pen colour
-@tool
 def set_pen(node: Node, name: str, r: int, g: int, b: int, width: int, off: int):
-    """"
-    Sets the pen properties for a turtle in the turtlesim environment.
-
-    :param node: The ROS 2 node instance.
-    :param name: The name of the turtle.
-    :param r: Red color component (0-255).
-    :param g: Green color component (0-255).
-    :param b: Blue color component (0-255).
-    :param width: Pen width.
-    :param off: Whether the pen is off (1 for off, 0 for on).
-    """
     name = name.replace("/", "")
     try:
         set_pen = node.create_client(SetPen, f'/{name}/set_pen')
@@ -385,3 +313,26 @@ def set_pen(node: Node, name: str, r: int, g: int, b: int, width: int, off: int)
         return f"Successfully set the pen color for {name}."
     except Exception as e:
         return f"Failed to set the pen color for {name}: {e}"
+    
+def has_moved_to_expected_coordinates(
+    name: str, expected_x: float, expected_y: float, tolerance: float = 0.1
+) -> str:
+    """
+    Check if the turtle has moved to the expected position.
+
+    :param name: name of the turtle
+    :param expected_x: expected x-coordinate
+    :param expected_y: expected y-coordinate
+    :param tolerance: tolerance level for the comparison
+    """
+    current_pose = get_turtle_pose.invoke({"names": [name]})
+    current_x = current_pose[name].x
+    current_y = current_pose[name].y
+
+    distance = ((current_x - expected_x) ** 2 + (current_y - expected_y) ** 2) ** 0.5
+    if distance <= tolerance:
+        return (
+            f"{name} has moved to the expected position ({expected_x}, {expected_y})."
+        )
+    else:
+        return f"{name} has NOT moved to the expected position ({expected_x}, {expected_y})."

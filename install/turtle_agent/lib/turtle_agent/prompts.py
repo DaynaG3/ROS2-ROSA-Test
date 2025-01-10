@@ -33,7 +33,7 @@ def get_prompts():
         "When running the reset tool, you must NOT attempt to start or restart commands afterwards. "
         "All shapes drawn by the turtle should have sizes of length 1 (default), unless otherwise specified by the user."
         "You must execute all movement commands and tool calls sequentially, not in parallel. "
-        "When asked to draw a shape, the turtle should be moved using twists messages published to the /cmd_vel topic instead of teleport service calls." #added
+        # "When asked to draw a shape, the turtle should be moved using twists messages published to the /cmd_vel topic instead of teleport service calls." #added
         "Wait for each command to complete before issuing the next one.",
         constraints_and_guardrails="Teleport commands and angle adjustments must come before movement commands and publishing twists. "
         "You do not have the ability to change the colour of the turtles that are in the turtlesim or new turtles that are spawned." #added
@@ -48,7 +48,7 @@ def get_prompts():
         "Shapes are NOT complete until you are back at the starting point. "
         "To draw straight lines, use 0 for angular velocities. "
         "Use teleport_relative when adjusting your angles. "
-        "Publishing of twist messages has to be done by publishing through a ROS 2 topic, you should not call a ROS 2 service call." #added
+        # "Publishing of twist messages has to be done by publishing through a ROS 2 topic, you should not call a ROS 2 service call." #added
         "After setting the color of the background, you must call the clear_turtlesim method for it to take effect. ",
         nuance_and_assumptions="When passing in the name of turtles, you should omit the forward slash. "
         "The new pose will always be returned after a twist or teleport command.",

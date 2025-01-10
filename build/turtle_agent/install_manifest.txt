@@ -1,10 +1,11 @@
 /home/ras/isaac_ws/rosa2_mod/install/turtle_agent/share/turtle_agent/scripts/turtle_agent.py
+/home/ras/isaac_ws/rosa2_mod/install/turtle_agent/share/turtle_agent/scripts/turtle_agent(edited ver).py
 /home/ras/isaac_ws/rosa2_mod/install/turtle_agent/share/turtle_agent/scripts/prompts.py
 /home/ras/isaac_ws/rosa2_mod/install/turtle_agent/share/turtle_agent/scripts/__init__.py
 /home/ras/isaac_ws/rosa2_mod/install/turtle_agent/share/turtle_agent/scripts/tools/turtle.py
 /home/ras/isaac_ws/rosa2_mod/install/turtle_agent/share/turtle_agent/scripts/tools/__init__.py
-/home/ras/isaac_ws/rosa2_mod/install/turtle_agent/share/turtle_agent/scripts/tools/turtle copy 2.py
-/home/ras/isaac_ws/rosa2_mod/install/turtle_agent/share/turtle_agent/scripts/tools/turtle_orignial.py
+/home/ras/isaac_ws/rosa2_mod/install/turtle_agent/share/turtle_agent/scripts/tools/turtle(edited).py
+/home/ras/isaac_ws/rosa2_mod/install/turtle_agent/share/turtle_agent/scripts/tools/turtle(original).py
 /home/ras/isaac_ws/rosa2_mod/install/turtle_agent/share/turtle_agent/scripts/llm.py
 /home/ras/isaac_ws/rosa2_mod/install/turtle_agent/share/turtle_agent/scripts/test_inp.py
 /home/ras/isaac_ws/rosa2_mod/install/turtle_agent/share/turtle_agent/scripts/help.py
@@ -13,8 +14,8 @@
 /home/ras/isaac_ws/rosa2_mod/install/turtle_agent/share/turtle_agent/launch/turtle_agent_launch.py
 /home/ras/isaac_ws/rosa2_mod/install/turtle_agent/lib/turtle_agent/tools/turtle.py
 /home/ras/isaac_ws/rosa2_mod/install/turtle_agent/lib/turtle_agent/tools/__init__.py
-/home/ras/isaac_ws/rosa2_mod/install/turtle_agent/lib/turtle_agent/tools/turtle copy 2.py
-/home/ras/isaac_ws/rosa2_mod/install/turtle_agent/lib/turtle_agent/tools/turtle_orignial.py
+/home/ras/isaac_ws/rosa2_mod/install/turtle_agent/lib/turtle_agent/tools/turtle(edited).py
+/home/ras/isaac_ws/rosa2_mod/install/turtle_agent/lib/turtle_agent/tools/turtle(original).py
 /home/ras/isaac_ws/rosa2_mod/install/turtle_agent/lib/turtle_agent/turtle_agent.py
 /home/ras/isaac_ws/rosa2_mod/install/turtle_agent/lib/turtle_agent/help.py
 /home/ras/isaac_ws/rosa2_mod/install/turtle_agent/lib/turtle_agent/llm.py

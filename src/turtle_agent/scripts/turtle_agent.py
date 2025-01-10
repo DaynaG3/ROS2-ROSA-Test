@@ -34,16 +34,10 @@ from rich.text import Text
 from rosa import ROSA
 
 import tools.turtle as turtle_tools
+from tools.turtle import init_node
 from help import get_help
 from llm import get_llm
 from prompts import get_prompts
-
-
-# Typical method for defining tools in ROSA
-@tool
-def cool_turtle_tool():
-    """A cool turtle tool that doesn't really do anything."""
-    return "This is a cool turtle tool! It doesn't do anything, but it's cool."
 
 
 class TurtleAgent(Node, ROSA):
@@ -60,17 +54,11 @@ class TurtleAgent(Node, ROSA):
         self.__llm = get_llm(streaming=streaming)
         self.__streaming = streaming
 
-        blast_off = Tool(
-            name="blast_off",
-            func=self.blast_off,
-            description="Make the turtle blast off!",
-        )
-
         ROSA.__init__(
             self,
             ros_version=2,
             llm=self.__llm,
-            tools=[cool_turtle_tool, blast_off],
+            tools=[],
             tool_packages=[turtle_tools],
             blacklist=self.__blacklist,
             prompts=self.__prompts,
@@ -93,15 +81,6 @@ class TurtleAgent(Node, ROSA):
             "examples": lambda: self.submit(self.choose_example()),
             "clear": lambda: self.clear(),
         }
-
-    def blast_off(self, input: str):
-        return f"""
-        Ok, we're blasting off at the speed of light!
-
-        <ROSA_INSTRUCTIONS>
-            You should now use your tools to make the turtle move around the screen at high speeds.
-        </ROSA_INSTRUCTIONS>
-        """
 
     @property
     def greeting(self):
@@ -305,6 +284,7 @@ def main():
 
     rclpy.init()
     turtle_agent = TurtleAgent()
+    init_node(turtle_agent)
 
     try:
         asyncio.run(turtle_agent.run())
