@@ -22,9 +22,11 @@ def get_llm(streaming: bool = False):
     # load environment variables from .env
     # dotenv.load_dotenv(dotenv.find_dotenv())
 
-    # Retrieve the OpenAI API key from environment variables
-    OPENAI_API_KEY = "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" # Added
-
+    # Retrieve the OpenAI API key from environment variables (Nursultan key)
+    #OPENAI_API_KEY = "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" # Added
+    
+    #Dayna's Key
+    OPENAI_API_KEY = "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"
     # Initialize the OpenAI Chat model using the API key
     llm = ChatOpenAI(
         model_name="gpt-4o",  # Specify the model (you can change this to gpt-4 or others)

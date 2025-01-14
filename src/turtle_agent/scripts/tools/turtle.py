@@ -39,12 +39,16 @@ def remove_cmd_vel_pub(name: str):
 
 # Add the default turtle1 publisher on startup
 def init_node(node: Node):
-    # rclpy.init()
-    # node = Node('turtle_agent')
     add_cmd_vel_pub("turtle1", node.create_publisher(Twist, '/turtle1/cmd_vel', 10))
     return node
 
 def within_bounds(x: float, y: float) -> tuple:
+    """
+    Check if the given x, y coordinates are within the bounds of the turtlesim environment.
+
+    :param x: The x-coordinate.
+    :param y: The y-coordinate.
+    """
     if 0 <= x <= 11 and 0 <= y <= 11:
         return True, "Coordinates are within bounds."
     else:
@@ -53,11 +57,14 @@ def within_bounds(x: float, y: float) -> tuple:
 def will_be_within_bounds(
     node: Node, name: str, velocity: float, lateral: float, angle: float, duration: float = 1.0
 ) -> tuple:
+    """Check if the turtle will be within bounds after publishing a twist command."""
+    #Get the current pose of the turtle
     pose = get_turtle_pose(node, [name])
     current_x = pose[name].x
     current_y = pose[name].y
     current_theta = pose[name].theta
-
+    
+    # Calculate the new position and orientation
     if abs(angle) < 1e-6:
         new_x = (
             current_x
@@ -67,14 +74,15 @@ def will_be_within_bounds(
             current_y
             + (velocity * sin(current_theta) + lateral * cos(current_theta)) * duration
         )
-    else:
+    else: #Circular Motion
         radius = sqrt(velocity**2 + lateral**2) / abs(angle)
         center_x = current_x - radius * sin(current_theta)
         center_y = current_y + radius * cos(current_theta)
         angle_traveled = angle * duration
         new_x = center_x + radius * sin(current_theta + angle_traveled)
         new_y = center_y - radius * cos(current_theta + angle_traveled)
-
+        
+        #Check if any point of the circle is out of bounds
         for t in range(int(duration) + 1):
             angle_t = current_theta + angle * t
             x_t = center_x + radius * sin(angle_t)
@@ -96,11 +104,19 @@ def will_be_within_bounds(
     return True, f"The turtle will remain within bounds at ({new_x:.2f}, {new_y:.2f})."
 
 def spawn_turtle(node: Node, name: str, x: float, y: float, theta: float) -> str:
+    """
+    Spawn a turtle at the given x, y, and theta coordinates.
+
+    :param name: name of the turtle.
+    :param x: x-coordinate.
+    :param y: y-coordinate.
+    :param theta: angle.
+    """
     in_bounds, message = within_bounds(x, y)
     if not in_bounds:
         return message
 
-    name = name.replace("/", "")
+    name = name.replace("/", "") # Remove any forward slashes from the name
 
     try:
         spawn = node.create_client(Spawn, '/spawn')
@@ -110,16 +126,35 @@ def spawn_turtle(node: Node, name: str, x: float, y: float, theta: float) -> str
         spawn_req.y = y
         spawn_req.theta = theta
         spawn_req.name = name
-        spawn.call_async(spawn_req)
+
+        future = spawn.call_async(spawn_req) #Added
+        rclpy.spin_until_future_complete(node, future) #Added
+        # spawn.call_async(spawn_req)
 
         global cmd_vel_pubs
-        cmd_vel_pubs[name] = node.create_publisher(Twist, f'/{name}/cmd_vel', 10)
 
-        return f"{name} spawned at x: {x}, y: {y}, theta: {theta}."
+        if future.result() is not None:
+            # Create and store a publisher for the turtle's cmd_vel topic
+            # publisher = node.create_publisher(Twist, f'/{name}/cmd_vel', 10)
+            add_cmd_vel_pub(name, node.create_publisher(Twist, f'/{name}/cmd_vel', 10))
+            return f"{name} spawned at x: {x}, y: {y}, theta: {theta}."
+        else:
+            return f"Failed to spawn {name}: {future.exception()}"
+        
+        # #cmd_vel_pubs[name] = node.create_publisher(Twist, f'/{name}/cmd_vel', 10)
+        # add_cmd_vel_pub(name, node.create_publisher(Twist, f'/{name}/cmd_vel', 10))
+        # # return node, f"{name} spawned at x: {x}, y: {y}, theta: {theta}."
+        # return f"{name} spawned at x: {x}, y: {y}, theta: {theta}."
+
     except Exception as e:
-        return f"Failed to spawn {name}: {e}"
+        return node, f"Failed to spawn {name}: {e}"
 
 def kill_turtle(node: Node, names: List[str]):
+    """
+    Removes a turtle from the turtlesim environment.
+
+    :param names: List of names of the turtles to remove (do not include the forward slash).
+    """
     names = [name.replace("/", "") for name in names]
     response = ""
     global cmd_vel_pubs
@@ -139,6 +174,7 @@ def kill_turtle(node: Node, names: List[str]):
     return response
 
 def clear_turtlesim(node: Node):
+    """Clears the turtlesim background and sets the color to the value of the background parameters."""
     try:
         clear = node.create_client(Empty, '/clear')
         clear.wait_for_service(timeout_sec=5)
@@ -148,6 +184,11 @@ def clear_turtlesim(node: Node):
         return f"Failed to clear the turtlesim background: {e}"
 
 def get_turtle_pose(node: Node, names: List[str]) -> dict:
+    """
+    Get the pose of one or more turtles.
+
+    :param names: List of names of the turtles to get the pose of.
+    """
     names = [name.replace("/", "") for name in names]
     poses = {}
 
@@ -163,6 +204,15 @@ def get_turtle_pose(node: Node, names: List[str]) -> dict:
 def teleport_absolute(
     node: Node, name: str, x: float, y: float, theta: float, hide_pen: bool = True
 ):
+    """
+    Teleport a turtle to the given x, y, and theta coordinates.
+
+    :param name: name of the turtle
+    :param x: The x-coordinate, range: [0, 11]
+    :param y: The y-coordinate, range: [0, 11]
+    :param theta: angle
+    :param hide_pen: True to hide the pen (do not show movement trace on screen), False to show the pen
+    """
     in_bounds, message = within_bounds(x, y)
     if not in_bounds:
         return message
@@ -230,24 +280,18 @@ def publish_twist_to_cmd_vel(
     name = name.replace("/", "")
 
     # Check if the movement will keep the turtle within bounds
-    # in_bounds, message = will_be_within_bounds(
-    # node, name, linear_x, linear_y, angular_z, duration=steps)
+    # in_bounds, message = will_be_within_bounds(node, name, linear_x, linear_y, angular_z, duration=steps)
 
     try:
 
-        # if name not in cmd_vel_pubs:
-        #         return f"Publisher for {name} not found. Call create_cmd_vel_publisher() first."
-        
-        # # Create publisher
-        # cmd_vel_pub = node.create_publisher(Twist, topic, 10)
+        if name not in cmd_vel_pubs:
+                return f"Publisher for {name} not found. Call create_cmd_vel_publisher() first."
     
         # if not in_bounds:
         #     return message     
-
-        # Publish message
-        global cmd_vel_pubs
         pub = cmd_vel_pubs[name]
-        # cmd_vel_pubs[name].publish(cmd)
+        
+        # Publish twist message
         for _ in range(steps):
             pub.publish(cmd)
             time.sleep(1.0)        
@@ -255,9 +299,13 @@ def publish_twist_to_cmd_vel(
     except Exception as e:
         return f"Failed to publish velocity command: {e}"
 
-def stop_turtle(node: Node, name: str):
+def stop_turtle(name: str):
+    """
+    Stop a turtle by publishing a Twist message with zero linear and angular velocities.
+
+    :param name: name of the turtle
+    """
     return publish_twist_to_cmd_vel(
-        node,
         name,
         0.0,
         0.0,
@@ -265,6 +313,9 @@ def stop_turtle(node: Node, name: str):
     )
 
 def reset_turtlesim(node: Node):
+    """
+    Resets the turtlesim, removes all turtles, clears any markings, and creates a new default turtle at the center.
+    """
     try:
         reset = node.create_client(Empty, '/reset')
         reset.wait_for_service(timeout_sec=5)
@@ -276,6 +327,17 @@ def reset_turtlesim(node: Node):
         return f"Failed to reset the turtlesim environment: {e}"
 
 def set_pen(node: Node, name: str, r: int, g: int, b: int, width: int, off: int):
+    """"
+    Sets the pen properties for a turtle in the turtlesim environment.
+
+    :param node: The ROS 2 node instance.
+    :param name: The name of the turtle.
+    :param r: Red color component (0-255).
+    :param g: Green color component (0-255).
+    :param b: Blue color component (0-255).
+    :param width: Pen width.
+    :param off: Whether the pen is off (1 for off, 0 for on).
+    """
     name = name.replace("/", "")
     try:
         set_pen = node.create_client(SetPen, f'/{name}/set_pen')
