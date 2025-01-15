@@ -1,6 +1,7 @@
 # Ignore the "build" and "logs" folders
 build/
 logs/
+install/
 
 # Ignore environment files
 .env
