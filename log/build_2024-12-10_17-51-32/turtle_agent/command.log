@@ -1,6 +1,0 @@
-Invoking command in '/home/ras/isaac_ws/rosa2_mod/build/turtle_agent': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake /home/ras/isaac_ws/rosa2_mod/src/turtle_agent -DCMAKE_INSTALL_PREFIX=/home/ras/isaac_ws/rosa2_mod/install/turtle_agent
-Invoked command in '/home/ras/isaac_ws/rosa2_mod/build/turtle_agent' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake /home/ras/isaac_ws/rosa2_mod/src/turtle_agent -DCMAKE_INSTALL_PREFIX=/home/ras/isaac_ws/rosa2_mod/install/turtle_agent
-Invoking command in '/home/ras/isaac_ws/rosa2_mod/build/turtle_agent': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/ras/isaac_ws/rosa2_mod/build/turtle_agent -- -j16 -l16
-Invoked command in '/home/ras/isaac_ws/rosa2_mod/build/turtle_agent' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/ras/isaac_ws/rosa2_mod/build/turtle_agent -- -j16 -l16
-Invoking command in '/home/ras/isaac_ws/rosa2_mod/build/turtle_agent': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --install /home/ras/isaac_ws/rosa2_mod/build/turtle_agent
-Invoked command in '/home/ras/isaac_ws/rosa2_mod/build/turtle_agent' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --install /home/ras/isaac_ws/rosa2_mod/build/turtle_agent
