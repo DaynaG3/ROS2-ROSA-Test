@@ -1,9 +1,0 @@
-/home/ras/isaac_ws/rosa2_mod/build/turtle_agent/CMakeFiles/uninstall.dir
-/home/ras/isaac_ws/rosa2_mod/build/turtle_agent/CMakeFiles/turtle_agent_uninstall.dir
-/home/ras/isaac_ws/rosa2_mod/build/turtle_agent/CMakeFiles/test.dir
-/home/ras/isaac_ws/rosa2_mod/build/turtle_agent/CMakeFiles/edit_cache.dir
-/home/ras/isaac_ws/rosa2_mod/build/turtle_agent/CMakeFiles/rebuild_cache.dir
-/home/ras/isaac_ws/rosa2_mod/build/turtle_agent/CMakeFiles/list_install_components.dir
-/home/ras/isaac_ws/rosa2_mod/build/turtle_agent/CMakeFiles/install.dir
-/home/ras/isaac_ws/rosa2_mod/build/turtle_agent/CMakeFiles/install/local.dir
-/home/ras/isaac_ws/rosa2_mod/build/turtle_agent/CMakeFiles/install/strip.dir
